@@ -1,0 +1,72 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Wed May  4 12:48:58 2022
+
+@author: beelk
+"""
+import pandas as pd
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.ensemble import RandomForestClassifier
+from sklearn import metrics
+from sklearn.metrics import classification_report,confusion_matrix,accuracy_score
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.linear_model import LogisticRegression
+from sklearn import svm
+# from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction.text import TfidfVectorizer
+
+
+cv = CountVectorizer(ngram_range=(2,2))
+tfidf = TfidfVectorizer(stop_words = 'english')
+
+
+log_model = LogisticRegression()
+randomclassifier = RandomForestClassifier(n_estimators=200,criterion='entropy')
+nb = MultinomialNB()
+svm_model = svm.SVC()
+
+df = pd.read_csv('C:\\Users\\beelk\\Data.csv', encoding = 'ISO-8859-1')
+
+train = df[df['Date'] < '20150101']
+test = df[df['Date'] > '20141231']
+
+data=train.iloc[:,2:27]
+
+data.replace("[^a-zA-Z]"," ", inplace=True)
+data.head(3)
+
+list1= [i for i in range(25)]
+new_Index=[str(i) for i in list1]
+data.columns= new_Index
+for index in new_Index:
+    data[index]=data[index].str.lower()
+    
+headlines=[]
+for row in range(0,len(data)):
+    headlines.append(' '.join([str(i) for i in data.iloc[row,0:25]]))
+
+
+
+
+
+def predictstock(X,Y,Y_test,ml,nlp):
+    traindata_x=nlp.fit_transform(X)
+    ml.fit(traindata_x,Y)
+    test_transform= []
+    for row in range(0,len(test)):
+        test_transform.append(' '.join(str(x) for x in test.iloc[row,2:27]))
+    test_data = nlp.transform(test_transform)
+    predictions = ml.predict(test_data)
+    score=accuracy_score(Y_test,predictions)
+    print(score)
+    report=classification_report(Y_test,predictions)
+    print(report)
+    
+predictstock(headlines,train.Label,test.Label,randomclassifier,cv)
+predictstock(headlines,train.Label,test.Label,nb,cv)
+predictstock(headlines,train.Label,test.Label,svm_model,cv)
+predictstock(headlines,train.Label,test.Label,log_model,cv)
+predictstock(headlines,train.Label,test.Label,randomclassifier,tfidf)
+predictstock(headlines,train.Label,test.Label,nb,tfidf)
+predictstock(headlines,train.Label,test.Label,svm_model,tfidf)
+predictstock(headlines,train.Label,test.Label,log_model,tfidf)
